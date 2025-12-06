@@ -1,8 +1,22 @@
 const video = document.getElementById("video");
 const blinkMsg = document.getElementById("blink");
 
-// More realistic EAR threshold for CDN model
-const BLINK_THRESHOLD = 0.27;
+// Debug: live EAR display
+let earDisplay = document.createElement("div");
+earDisplay.style.position = "fixed";
+earDisplay.style.top = "10px";
+earDisplay.style.right = "10px";
+earDisplay.style.fontSize = "24px";
+earDisplay.style.color = "white";
+earDisplay.style.background = "rgba(0,0,0,0.4)";
+earDisplay.style.padding = "6px 10px";
+earDisplay.style.borderRadius = "6px";
+earDisplay.style.zIndex = "9999";
+document.body.appendChild(earDisplay);
+
+// Start with a high threshold until we know your EAR range
+let BLINK_THRESHOLD = 0.35;
+
 let blinkCooldown = false;
 
 function dist(a, b) {
@@ -52,10 +66,14 @@ async function main() {
     const EAR_right = getEAR(lm[386], lm[374], lm[362], lm[263]);
     const EAR = (EAR_left + EAR_right) / 2;
 
+    // 🔍 Show EAR on screen
+    earDisplay.innerText = `EAR: ${EAR.toFixed(3)}  (TH: ${BLINK_THRESHOLD})`;
+
+    // 🔥 Detect blink
     if (EAR < BLINK_THRESHOLD && !blinkCooldown) {
       blinkCooldown = true;
       showBlink();
-      setTimeout(() => (blinkCooldown = false), 350);
+      setTimeout(() => (blinkCooldown = false), 400);
     }
   });
 
