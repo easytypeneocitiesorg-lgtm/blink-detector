@@ -1,11 +1,12 @@
 const video = document.getElementById("video");
 const blinkMsg = document.getElementById("blink");
 
-const BLINK_THRESHOLD = 0.21;
+// More realistic EAR threshold for CDN model
+const BLINK_THRESHOLD = 0.27;
 let blinkCooldown = false;
 
 function dist(a, b) {
-  return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 function getEAR(upper, lower, left, right) {
@@ -22,9 +23,8 @@ function showBlink() {
 async function setupCamera() {
   const stream = await navigator.mediaDevices.getUserMedia({ video: true });
   video.srcObject = stream;
-
   return new Promise((resolve) => {
-    video.onloadedmetadata = () => resolve();
+    video.onloadedmetadata = resolve;
   });
 }
 
@@ -44,32 +44,18 @@ async function main() {
   });
 
   faceMesh.onResults((results) => {
-    if (!results.multiFaceLandmarks || results.multiFaceLandmarks.length === 0)
-      return;
+    if (!results.multiFaceLandmarks?.length) return;
 
     const lm = results.multiFaceLandmarks[0];
 
-    const EAR_left = getEAR(
-      lm[159],
-      lm[145],
-      lm[33],
-      lm[133]
-    );
-
-    const EAR_right = getEAR(
-      lm[386],
-      lm[374],
-      lm[362],
-      lm[263]
-    );
-
+    const EAR_left = getEAR(lm[159], lm[145], lm[33], lm[133]);
+    const EAR_right = getEAR(lm[386], lm[374], lm[362], lm[263]);
     const EAR = (EAR_left + EAR_right) / 2;
 
     if (EAR < BLINK_THRESHOLD && !blinkCooldown) {
       blinkCooldown = true;
       showBlink();
-
-      setTimeout(() => (blinkCooldown = false), 400);
+      setTimeout(() => (blinkCooldown = false), 350);
     }
   });
 
@@ -85,4 +71,3 @@ async function main() {
 }
 
 main();
-
