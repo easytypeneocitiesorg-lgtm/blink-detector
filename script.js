@@ -1,15 +1,9 @@
-import "@mediapipe/face_mesh";
-import "@mediapipe/camera_utils";
-import { FaceMesh } from "@mediapipe/face_mesh";
-
 const video = document.getElementById("video");
 const blinkMsg = document.getElementById("blink");
 
-// EAR threshold — lower = stricter detection
 const BLINK_THRESHOLD = 0.21;
 let blinkCooldown = false;
 
-// Distance calc
 function dist(a, b) {
   return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
 }
@@ -37,7 +31,7 @@ async function setupCamera() {
 async function main() {
   await setupCamera();
 
-  const faceMesh = new FaceMesh({
+  const faceMesh = new FaceMesh.FaceMesh({
     locateFile: (file) =>
       `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`,
   });
@@ -55,20 +49,18 @@ async function main() {
 
     const lm = results.multiFaceLandmarks[0];
 
-    // LEFT EYE (using MediaPipe landmark indices)
     const EAR_left = getEAR(
-      lm[159], // upper
-      lm[145], // lower
-      lm[33],  // left corner
-      lm[133]  // right corner
+      lm[159],
+      lm[145],
+      lm[33],
+      lm[133]
     );
 
-    // RIGHT EYE
     const EAR_right = getEAR(
-      lm[386], // upper
-      lm[374], // lower
-      lm[362], // left corner
-      lm[263]  // right corner
+      lm[386],
+      lm[374],
+      lm[362],
+      lm[263]
     );
 
     const EAR = (EAR_left + EAR_right) / 2;
@@ -77,18 +69,20 @@ async function main() {
       blinkCooldown = true;
       showBlink();
 
-      // stop rapid-fire blinks
       setTimeout(() => (blinkCooldown = false), 400);
     }
   });
 
-  new window.Camera(video, {
+  const camera = new Camera(video, {
     onFrame: async () => {
       await faceMesh.send({ image: video });
     },
     width: 640,
     height: 480,
-  }).start();
+  });
+
+  camera.start();
 }
 
 main();
+
